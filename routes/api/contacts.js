@@ -1,97 +1,23 @@
 const express = require('express')
 const router = express.Router()
-const RequestError  = require('../../helpers/requestError')
 const isValidId = require('../../helpers/validId');
-
-const {Contact} = require('../../models/contact');
-const { schema } = require('../../models/contact');
-const {updateFavoriteSchema} = require('../../models/contact');
-
+const {authenticate}  = require("../../midlewares");
+const ctrlWrapper = require('../../helpers/ctrlWraper');
+const ctrl  = require("../../controllers/contacts");
 
 
 
-router.get('/', async (req, res, next) => {
-  try {
-    const result = await Contact.find();
-    res.json(result)
-  } catch (error) {
-    next(error)
-  }
-});
 
-router.get('/:contactId', isValidId,  async (req, res, next) => {
-  try {
-    const { contactId } = req.params;
-    const result = await Contact.findById(contactId);
-    if (!result) {
-      throw RequestError(404, `Not found contact`);
-    }
-    res.json(result)
-  } catch (error) {
-    next(error)
-  }
-});
+router.get('/', authenticate, ctrlWrapper(ctrl.getAll));
 
-router.post('/', async (req, res, next) => {
-  try {
-    const { error } = schema.validate(req.body);
-        if(error) {
-            throw RequestError(400, error.message)
-        }
-        const result = await Contact.create(req.body);
-        res.status(201).json(result)
-    } catch (error) {
-        next(error);
-    }
-})
+router.get('/:contactId', isValidId, ctrlWrapper(ctrl.getById));
 
-router.delete('/:contactId', isValidId, async (req, res, next) => {
-  try {
-    const { contactId } = req.params;
-    const result = await Contact.findByIdAndDelete(contactId);
-    if (!result) {
-      throw RequestError(404, `Not found contact ${contactId}`);
-    }
-    res.json({
-      message: "delete success"
-    })
-  } catch (error) {
-    next(error);
-  }
-})
+router.post('/',  ctrlWrapper(ctrl.add))
 
-router.put('/:contactId', isValidId, async (req, res, next) => {
-  try {
-    const { error } = schema.validate(req.body);
-    if (error) {
-      throw RequestError(400, error.message);
-    }
-    const { contactId } = req.params;
-    const result = await Contact.findByIdAndUpdate(contactId, req.body, {new: true});
-    if (!result) {
-      throw RequestError(404, `Not found contact ${contactId}`);
-    }
-    res.json(result)
-  } catch (error) {
-    next(error);
-  }
-})
+router.delete('/:contactId', isValidId, ctrlWrapper(ctrl.remove))
 
-router.patch('/:contactId/favorite', isValidId, async (req, res, next) => {
-  try {
-    const { error } = updateFavoriteSchema.validate(req.body);
-    if (error) {
-      throw RequestError(400, error.message);
-    }
-    const { contactId } = req.params;
-    const result = await Contact.findByIdAndUpdate(contactId, req.body, {new: true});
-    if (!result) {
-      throw RequestError(400, `missing field favorite`);
-    }
-    res.json(result)
-  } catch (error) {
-    next(error);
-  }
-})
+router.put('/:contactId', isValidId, ctrlWrapper(ctrl.update))
+
+router.patch('/:contactId/favorite', isValidId, ctrlWrapper(ctrl.updateFavorite))
 
 module.exports = router;
