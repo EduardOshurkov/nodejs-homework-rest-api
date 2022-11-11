@@ -20,8 +20,7 @@ const contactSchema = new Schema({
   },
    owner: {
       type: Schema.Types.ObjectId,
-      ref: "user",
-      require: true,
+      ref: 'user',
     },
 }, { versionKey: false, timestamps: true }); 
 
